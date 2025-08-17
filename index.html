@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Contact List</title>
+  <style>
+  /* Basic layout and styling for page */
+	body {
+	  font-family: Arial, sans-serif;
+	  margin: 30px;
+	}
+	h1, h2 {
+	  color: #333;
+	}
+	
+	/* Style the form using grid layout */
+	form {
+	  margin-bottom: 20px;
+	  display: grid;
+	  grid-template-columns: repeat(2, 1fr);
+	  gap: 10px;
+	  max-width: 600px;
+	}
+	form input {
+	  padding: 8px;
+	  font-size: 14px;
+	}
+	form button {
+	  grid-column: span 2;
+	  padding: 10px;
+	  background-color: #28a745;
+	  color: white;
+	  font-size: 16px;
+	  border: none;
+	  cursor: pointer;
+	}
+	
+	/* Style for the contact table */
+	table {
+	  border-collapse: collapse;
+	  width: 100%;
+	  max-width: 1000px;
+	}
+	th, td {
+	  border: 1px solid #ccc;
+	  padding: 10px;
+	  text-align: left;
+	}
+	th {
+	  background-color: #f4f4f4;
+	}
+  </style>
+</head>
+<body>
+
+  <h1>Contact Management</h1>
+
+  <!-- Contact input form -->
+  <h2>Add Contact</h2>
+  <form id="contactForm">
+	<input type="text" name="firstName" placeholder="First Name" required>
+	<input type="text" name="lastName" placeholder="Last Name" required>
+	<input type="text" name="address" placeholder="Address">
+	<input type="text" name="city" placeholder="City">
+	<input type="text" name="state" placeholder="State">
+	<input type="text" name="zip" placeholder="ZIP">
+	<input type="email" name="email" placeholder="Email">
+	<input type="text" name="phone" placeholder="Phone">
+	<button type="submit">Add Contact</button>
+  </form>
+
+  <!-- Display table for all contacts -->
+  <h2>Contact List</h2>
+  <table id="contactsTable">
+	<thead>
+	  <tr>
+		<th>First</th>
+		<th>Last</th>
+		<th>Address</th>
+		<th>City</th>
+		<th>State</th>
+		<th>ZIP</th>
+		<th>Email</th>
+		<th>Phone</th>
+	  </tr>
+	</thead>
+	<tbody></tbody>
+  </table>
+
+  <script>
+  
+// =====================================================
+// GET DATA FUNCTION
+// Fetch contact data from the server and display it in the table.
+//This function sends a GET request to get_contacts.php,
+//parses the JSON response, and dynamically creates table rows.
+// =====================================================
+	async function loadContacts() {
+	  const response = await fetch('get_contacts.php');
+	  
+	  /*
+	  fetch('get_contacts.php')
+	  This fetches data from your PHP backend, which is expected to return a JSON array of contacts like:
+	  [
+		{
+		  "firstName": "John",
+		  "lastName": "Doe",
+		  "address": "123 Main St",
+		  "city": "Philadelphia",
+		  "state": "PA",
+		  "zip": "19104",
+		  "email": "john@example.com",
+		  "phone": "555-1234"
+		},
+		{
+		  "firstName": "Jane",
+		  "lastName": "Smith",
+		  ...
+		}
+	  ]
+	  */
+	  
+	  const data = await response.json();
+
+	  const tbody = document.querySelector("#contactsTable tbody");
+	  tbody.innerHTML = ""; // Clear existing rows
+
+/*
+The "contact" in forEach is just a local variable used to refer to each individual object (i.e., one person's contact record) in the array returned by your get_contacts.php script. You could rename it to anything like person or entry — it's just a name for each item being looped over.
+
+data.forEach(contact => { ... }) where data is a JSON array
+*/
+
+	  data.forEach(contact => {
+		const row = document.createElement("tr");
+		row.innerHTML = `
+		  <td>${contact.firstName}</td>
+		  <td>${contact.lastName}</td>
+		  <td>${contact.address || ''}</td>
+		  <td>${contact.city || ''}</td>
+		  <td>${contact.state || ''}</td>
+		  <td>${contact.zip || ''}</td>
+		  <td>${contact.email || ''}</td>
+		  <td>${contact.phone || ''}</td>
+		`;
+		tbody.appendChild(row);
+	  });
+	}
+
+// =====================================================
+// SUBMIT NEW DATA FUNCTION
+// Handles form submission to add a new contact.
+// Collects form data, sends it as JSON via POST to add_contact.php,
+// Reloads the contact list on success.
+// =====================================================
+
+	document.getElementById('contactForm').addEventListener('submit', async function(e) {
+	  e.preventDefault();
+	  
+	  /*
+	  FormData(this): Collects all form input values as key-value pairs
+	  this: Refers to the <form id="contactForm"> element
+	  Object.fromEntries(...): Converts form data into a plain JavaScript object for easier use
+	  */
+
+	  const formData = new FormData(this);
+	  const data = Object.fromEntries(formData.entries());
+
+	  // Send contact data to the server to be saved in the database
+	  const response = await fetch('add_contact.php', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(data)
+	  });
+
+	  const result = await response.json();
+	  if (result.success) {
+		alert("Contact added!");
+		this.reset();
+		loadContacts(); // Refresh table
+	  } else {
+		alert("Error: " + result.error);
+	  }
+	});
+
+
+// Load contacts when the page first loads.
+	loadContacts();
+  </script>
+
+</body>
+</html>
